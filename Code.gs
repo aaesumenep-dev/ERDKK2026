@@ -1,4 +1,3 @@
-
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('Sistem Manajemen Arsip Petani')
@@ -6,12 +5,15 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-
+function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  // Logika untuk menyimpan data ke Spreadsheet atau Drive
+  return ContentService.createTextOutput("Sukses").setMimeType(ContentService.MimeType.TEXT);
+}
 function processAutoSave(data) {
   try {
     const folderId = '1OVmkx1PNdwbkyZp6z4Ajgjz7qznL5pJr'; 
     let folder;
-
     // Coba akses folder tujuan
     try {
       folder = DriveApp.getFolderById(folderId);
@@ -23,15 +25,12 @@ function processAutoSave(data) {
     // Data.alamat diambil dari kolom Alamat di frontend jika tersedia
     const tanggal = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd_HH-mm");
     let baseName = data.alamat || data.fileName || "Rekap_Arsip";
-    
+
     // Membersihkan karakter yang tidak valid untuk nama file
     baseName = baseName.replace(/[/\\?%*:|"<>]/g, '-');
-
     const finalFileName = baseName + "_" + tanggal + ".csv";
-
     // Buat file baru di Drive
     const file = folder.createFile(finalFileName, data.csv, MimeType.CSV);
-
     return JSON.stringify({
       status: "success",
       message: "Berhasil disimpan sebagai: " + finalFileName,
@@ -44,4 +43,5 @@ function processAutoSave(data) {
       message: "Gagal menyimpan: " + error.toString()
     });
   }
+
 }
