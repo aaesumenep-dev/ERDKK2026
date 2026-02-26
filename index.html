@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Arsip Petani - Total Rekapitulasi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PapaParse for CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900">
+
+    <!-- Navigasi Atas -->
+    <nav class="bg-emerald-900 text-white sticky top-0 z-30 shadow-md border-b border-emerald-700">
+        <div class="max-w-[1600px] mx-auto px-6 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-100 p-2 rounded-lg text-emerald-800">
+                    <i data-lucide="database"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-emerald-50">Arsip Digital Pertanian</h1>
+                    <div class="flex items-center gap-2 text-emerald-300 text-xs font-medium">
+                        <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                        REKAPITULASI TOTAL AKTIF
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap justify-center gap-3">
+                <label class="flex items-center gap-2 bg-white text-emerald-900 hover:bg-emerald-50 px-5 py-2.5 rounded-full cursor-pointer transition-all shadow-sm font-bold text-sm">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    Unggah CSV
+                    <input type="file" id="csvInput" class="hidden" accept=".csv">
+                </label>
+                <button id="saveDriveBtn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full transition-all shadow-sm font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                    Simpan ke Drive
+                </button>
+                <button id="resetBtn" class="flex items-center gap-2 bg-emerald-800 hover:bg-red-600 text-white px-5 py-2.5 rounded-full transition-all border border-emerald-700 font-bold text-sm">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    Reset
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1600px] mx-auto p-6 space-y-6">
+        
+        <!-- Statistik Dashboard -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-3 rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-100">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Total Petani</p>
+                    <h3 id="statPetani" class="text-xl font-black text-slate-800">0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-3 rounded-xl bg-cyan-600 text-white shadow-lg shadow-cyan-100">
+                    <i data-lucide="store" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Total Kios</p>
+                    <h3 id="statKios" class="text-xl font-black text-slate-800">0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-3 rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-100">
+                    <i data-lucide="wheat" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Urea MT1</p>
+                    <h3 id="statUreaMT1" class="text-lg font-black text-slate-800 whitespace-nowrap">0 Kg</h3>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-3 rounded-xl bg-amber-500 text-white shadow-lg shadow-amber-100">
+                    <i data-lucide="wheat" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Urea MT2</p>
+                    <h3 id="statUreaMT2" class="text-lg font-black text-slate-800 whitespace-nowrap">0 Kg</h3>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div class="p-3 rounded-xl bg-orange-500 text-white shadow-lg shadow-orange-100">
+                    <i data-lucide="wheat" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mb-1">Urea MT3</p>
+                    <h3 id="statUreaMT3" class="text-lg font-black text-slate-800 whitespace-nowrap">0 Kg</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Akumulasi Pupuk Global -->
+        <div class="bg-slate-900 rounded-3xl p-6 shadow-2xl overflow-hidden relative">
+            <div class="absolute top-0 right-0 p-8 opacity-10">
+                <i data-lucide="bar-chart-3" class="w-32 h-32 text-white"></i>
+            </div>
+            <h4 class="text-emerald-400 font-bold text-xs uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                <span class="w-8 h-px bg-emerald-500/50"></span>
+                Total Akumulasi Semua Musim (MT1 + MT2 + MT3)
+            </h4>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-6 relative z-10">
+                <div class="space-y-1">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase">Total Urea</p>
+                    <h2 id="totalGlobalUrea" class="text-2xl font-black text-white">0 <span class="text-xs font-normal text-slate-500">Kg</span></h2>
+                </div>
+                <div class="space-y-1 border-l border-slate-800 pl-4">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase">Total NPK</p>
+                    <h2 id="totalGlobalNPK" class="text-2xl font-black text-white">0 <span class="text-xs font-normal text-slate-500">Kg</span></h2>
+                </div>
+                <div class="space-y-1 border-l border-slate-800 pl-4">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase">Total NPK Formula</p>
+                    <h2 id="totalGlobalNPKF" class="text-2xl font-black text-white">0 <span class="text-xs font-normal text-slate-500">Kg</span></h2>
+                </div>
+                <div class="space-y-1 border-l border-slate-800 pl-4">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase">Total Organik</p>
+                    <h2 id="totalGlobalOrganik" class="text-2xl font-black text-white">0 <span class="text-xs font-normal text-slate-500">Kg</span></h2>
+                </div>
+                <div class="space-y-1 border-l border-slate-800 pl-4">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase">Total ZA</p>
+                    <h2 id="totalGlobalZA" class="text-2xl font-black text-white">0 <span class="text-xs font-normal text-slate-500">Kg</span></h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Pencarian -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="relative lg:col-span-2">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        placeholder="Cari NIK, Nama Petani..."
+                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all text-sm"
+                    >
+                </div>
+                <div>
+                    <select id="filterKios" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm font-medium text-slate-600">
+                        <option value="">Semua Kios</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="filterDesa" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm font-medium text-slate-600">
+                        <option value="">Semua Desa</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="filterPoktan" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm font-medium text-slate-600">
+                        <option value="">Semua Poktan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                <p id="driveStatus" class="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i> Menampilkan <span id="visibleCount">0</span> dari <span id="totalCount">0</span> data
+                </p>
+                <div class="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <span class="flex items-center gap-1"><i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> Klik hapus untuk membuang baris</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Utama -->
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto overflow-y-auto max-h-[500px] custom-scrollbar" id="tableContainer">
+                <table class="w-full text-left border-separate border-spacing-0" id="mainTable">
+                    <thead>
+                        <tr id="tableHeader" class="bg-slate-100 text-slate-700">
+                            <!-- Header JS -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100">
+                        <!-- Data JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyState" class="p-20 text-center flex flex-col items-center gap-6">
+                <div class="bg-slate-50 p-8 rounded-full">
+                    <i data-lucide="table-2" class="w-16 h-16 text-slate-300"></i>
+                </div>
+                <div>
+                    <p class="text-xl font-bold text-slate-800 tracking-tight">Database Belum Dimuat</p>
+                    <p class="text-slate-500 text-sm">Upload file CSV untuk melihat ringkasan data.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notifikasi -->
+    <div id="notification" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 hidden flex items-center gap-3 px-8 py-4 rounded-2xl shadow-2xl bg-slate-900 text-white transition-all min-w-[300px] justify-center">
+        <i data-lucide="check-circle" class="text-emerald-400" id="notifIcon"></i>
+        <p id="notifMessage" class="font-semibold text-sm"></p>
+    </div>
+
+    <script>
+        const allColumns = [
+            "Nama Penyuluh", "Kode Desa", "Kode Kios Pengecer", "Nama Kios Pengecer", 
+            "Gapoktan", "Nama Poktan", "Nama Petani", "KTP", "Tempat Lahir", 
+            "Tanggal Lahir", "Nama Ibu Kandung", "Alamat", "Subsektor", 
+            "Komoditas MT1", "Luas Lahan (Ha) MT1", "Pupuk Urea (Kg) MT1", "Pupuk NPK (Kg) MT1", "Pupuk NPK Formula (Kg) MT1", "Pupuk Organik (Kg) MT1", "Pupuk ZA (Kg) MT1",
+            "Komoditas MT2", "Luas Lahan (Ha) MT2", "Pupuk Urea (Kg) MT2", "Pupuk NPK (Kg) MT2", "Pupuk NPK Formula (Kg) MT2", "Pupuk Organik (Kg) MT2", "Pupuk ZA (Kg) MT2",
+            "Komoditas MT3", "Luas Lahan (Ha) MT3", "Pupuk Urea (Kg) MT3", "Pupuk NPK (Kg) MT3", "Pupuk NPK Formula (Kg) MT3", "Pupuk Organik (Kg) MT3", "Pupuk ZA (Kg) MT3"
+        ];
+
+        let masterData = [];
+
+        const csvInput = document.getElementById('csvInput');
+        const searchInput = document.getElementById('searchInput');
+        const filterKios = document.getElementById('filterKios');
+        const filterDesa = document.getElementById('filterDesa');
+        const filterPoktan = document.getElementById('filterPoktan');
+        const tableBody = document.getElementById('tableBody');
+        const tableHeader = document.getElementById('tableHeader');
+        const emptyState = document.getElementById('emptyState');
+        const resetBtn = document.getElementById('resetBtn');
+        const saveDriveBtn = document.getElementById('saveDriveBtn');
+
+        function renderHeader() {
+            let html = `<th class="p-4 bg-slate-100 border-b border-r border-slate-200 font-bold text-slate-600 text-[10px] uppercase sticky left-0 z-30 shadow-[1px_0_0_rgba(0,0,0,0.1)]">Aksi</th>`;
+            allColumns.forEach(col => {
+                html += `<th class="p-4 border-b border-slate-200 font-bold text-slate-600 text-[10px] uppercase whitespace-nowrap min-w-[150px] bg-slate-100">${col}</th>`;
+            });
+            tableHeader.innerHTML = html;
+        }
+
+        function showNotif(msg, type = 'success') {
+            const notification = document.getElementById('notification');
+            const icon = document.getElementById('notifIcon');
+            document.getElementById('notifMessage').innerText = msg;
+            
+            notification.className = `fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-8 py-4 rounded-2xl shadow-2xl transition-all min-w-[300px] justify-center ${type === 'error' ? 'bg-red-600' : (type === 'loading' ? 'bg-blue-600' : 'bg-slate-900')} text-white`;
+            
+            if(type === 'error') {
+                icon.setAttribute('data-lucide', 'alert-circle');
+            } else if(type === 'loading') {
+                icon.setAttribute('data-lucide', 'loader-2');
+                icon.classList.add('animate-spin');
+            } else {
+                icon.setAttribute('data-lucide', 'check-circle');
+                icon.classList.remove('animate-spin');
+            }
+            
+            notification.classList.remove('hidden');
+            lucide.createIcons();
+            if(type !== 'loading') {
+                setTimeout(() => notification.classList.add('hidden'), 5000);
+            }
+        }
+
+        function hideNotif() {
+            document.getElementById('notification').classList.add('hidden');
+        }
+
+        function updateDashboard(data) {
+            document.getElementById('statPetani').innerText = data.length.toLocaleString('id-ID');
+            document.getElementById('totalCount').innerText = masterData.length;
+            document.getElementById('visibleCount').innerText = data.length;
+
+            const uniqueKios = [...new Set(data.map(item => item['Nama Kios Pengecer']).filter(v => v))];
+            document.getElementById('statKios').innerText = uniqueKios.length.toLocaleString('id-ID');
+
+            const getSum = (field) => data.reduce((acc, curr) => acc + (parseFloat(curr[field]) || 0), 0);
+            
+            document.getElementById('statUreaMT1').innerText = `${getSum('Pupuk Urea (Kg) MT1').toLocaleString('id-ID')} Kg`;
+            document.getElementById('statUreaMT2').innerText = `${getSum('Pupuk Urea (Kg) MT2').toLocaleString('id-ID')} Kg`;
+            document.getElementById('statUreaMT3').innerText = `${getSum('Pupuk Urea (Kg) MT3').toLocaleString('id-ID')} Kg`;
+
+            const sumAll = (prefix) => {
+                return getSum(`${prefix} MT1`) + getSum(`${prefix} MT2`) + getSum(`${prefix} MT3`);
+            };
+
+            document.getElementById('totalGlobalUrea').innerText = sumAll('Pupuk Urea (Kg)').toLocaleString('id-ID');
+            document.getElementById('totalGlobalNPK').innerText = sumAll('Pupuk NPK (Kg)').toLocaleString('id-ID');
+            document.getElementById('totalGlobalNPKF').innerText = sumAll('Pupuk NPK Formula (Kg)').toLocaleString('id-ID');
+            document.getElementById('totalGlobalOrganik').innerText = sumAll('Pupuk Organik (Kg)').toLocaleString('id-ID');
+            document.getElementById('totalGlobalZA').innerText = sumAll('Pupuk ZA (Kg)').toLocaleString('id-ID');
+        }
+
+        function populateFilters(data) {
+            const kios = [...new Set(data.map(item => item['Nama Kios Pengecer']).filter(v => v))].sort();
+            const desas = [...new Set(data.map(item => item['Kode Desa']).filter(v => v))].sort();
+            const poktans = [...new Set(data.map(item => item['Nama Poktan']).filter(v => v))].sort();
+            
+            filterKios.innerHTML = '<option value="">Semua Kios</option>' + kios.map(k => `<option value="${k}">${k}</option>`).join('');
+            filterDesa.innerHTML = '<option value="">Semua Desa</option>' + desas.map(d => `<option value="${d}">${d}</option>`).join('');
+            filterPoktan.innerHTML = '<option value="">Semua Poktan</option>' + poktans.map(p => `<option value="${p}">${p}</option>`).join('');
+        }
+
+        function renderRows(data) {
+            if (data.length === 0) {
+                tableBody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+            let html = '';
+            data.forEach((row, index) => {
+                html += `<tr class="hover:bg-slate-50 transition-colors group">
+                    <td class="p-4 bg-white border-r border-slate-100 sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.03)] text-center">
+                        <button onclick="deleteRow(${index})" class="text-slate-300 hover:text-red-500 transition-colors">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </td>`;
+                allColumns.forEach(col => {
+                    const val = row[col] || '-';
+                    const isNum = col.includes('Pupuk') || col.includes('Luas');
+                    const colorClass = isNum ? 'font-mono text-indigo-600 font-bold' : 'text-slate-600';
+                    html += `<td class="p-4 text-xs whitespace-nowrap ${colorClass}">${val}</td>`;
+                });
+                html += `</tr>`;
+            });
+            tableBody.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function applyFilters() {
+            const search = searchInput.value.toLowerCase();
+            const kios = filterKios.value;
+            const desa = filterDesa.value;
+            const poktan = filterPoktan.value;
+            
+            const filtered = masterData.filter(item => {
+                const mSearch = !search || Object.values(item).some(v => String(v).toLowerCase().includes(search));
+                const mKios = !kios || item['Nama Kios Pengecer'] === kios;
+                const mDesa = !desa || item['Kode Desa'] === desa;
+                const mPoktan = !poktan || item['Nama Poktan'] === poktan;
+                return mSearch && mKios && mDesa && mPoktan;
+            });
+            renderRows(filtered);
+            updateDashboard(filtered);
+        }
+
+        csvInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            showNotif('Sedang memproses file...', 'loading');
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(res) {
+                    masterData = res.data;
+                    populateFilters(masterData);
+                    applyFilters();
+                    hideNotif();
+                    showNotif('Data berhasil diimpor!');
+                    setTimeout(() => autoSaveToDrive(), 2000);
+                }
+            });
+        });
+
+        searchInput.addEventListener('input', applyFilters);
+        filterKios.addEventListener('change', applyFilters);
+        filterDesa.addEventListener('change', applyFilters);
+        filterPoktan.addEventListener('change', applyFilters);
+
+        function manualSaveToDrive() {
+            if (masterData.length === 0) {
+                showNotif('Tidak ada data untuk disimpan.', 'error');
+                return;
+            }
+
+            const kecamatan = masterData[0]['Alamat'] || "Wilayah"; 
+            const csvContent = Papa.unparse(masterData);
+            const fileName = `eRDKK_${kecamatan}_${Date.now()}.csv`;
+
+            saveDriveBtn.disabled = true;
+            saveDriveBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Proses...`;
+            showNotif('Sedang mengunggah data ke Google Drive...', 'loading');
+            lucide.createIcons();
+
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler((response) => {
+                        const res = typeof response === 'string' ? JSON.parse(response) : response;
+                        if (res.status === "success") {
+                            showNotif(`Berhasil! Data Kecamatan ${kecamatan} tersimpan.`);
+                        } else {
+                            showNotif('Gagal: ' + res.message, 'error');
+                        }
+                        resetSaveButton();
+                    })
+                    .withFailureHandler((error) => {
+                        showNotif('Koneksi terputus atau terjadi kesalahan sistem.', 'error');
+                        resetSaveButton();
+                    })
+                    .processAutoSave({ csv: csvContent, fileName: fileName });
+            } else {
+                setTimeout(() => {
+                    showNotif('Lingkungan Google Apps Script tidak aktif. Gunakan fitur ini di dalam Google Sheet.', 'error');
+                    resetSaveButton();
+                }, 2000);
+            }
+        }
+
+        function resetSaveButton() {
+            saveDriveBtn.disabled = false;
+            saveDriveBtn.innerHTML = `<i data-lucide="cloud-upload" class="w-4 h-4"></i> Simpan ke Drive`;
+            lucide.createIcons();
+        }
+
+        saveDriveBtn.addEventListener('click', manualSaveToDrive);
+
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Kosongkan semua data dari tabel?')) {
+                masterData = [];
+                applyFilters();
+                showNotif('Tabel telah dibersihkan.');
+            }
+        });
+
+        window.deleteRow = (i) => {
+            masterData.splice(i, 1);
+            applyFilters();
+        };
+
+        // Inisialisasi
+        lucide.createIcons();
+        renderHeader();
+    </script>
+</body>
+</html>
